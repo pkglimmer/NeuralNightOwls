@@ -126,7 +126,7 @@ def inference(x):
     y7 = resnet50_inference(x, ckpt_path=resnet50_ckpt_paths[0])
     
         # Stack the tensors
-    stacked_tensors = torch.stack([y1, y2, y3], dim=0)  # This creates a tensor of shape [number_of_tensors, 1300]
+    stacked_tensors = torch.stack([y1, y2, y3, y4, y5, y6, y7], dim=0)  # This creates a tensor of shape [number_of_tensors, 1300]
 
     # Compute the mode along the first dimension
     mode_values, mode_indices = torch.mode(stacked_tensors, dim=0)
@@ -138,14 +138,14 @@ if __name__ == '__main__':
     x1 = np.load(os.path.join(test_data_path, 'eval_a_NEW_X.npy'))
     y1 = inference(torch.from_numpy(x1).float())
     y1 = y1 + 1
-    np.save('assets/a_pred.npy', y1.numpy())
+    np.save('assets/a_pred_1.npy', y1.numpy())
     print(y1)
     print(sum(y1))
 
     x2 = np.load(os.path.join(test_data_path, 'eval_b_NEW_X.npy'))
     y2 = inference(torch.from_numpy(x2).float())
     y2 = y2 + 1
-    np.save('assets/b_pred.npy', y2.numpy())
+    np.save('assets/b_pred_1.npy', y2.numpy())
     print(y2)
     print(sum(y2))
 
