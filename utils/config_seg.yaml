@@ -1,0 +1,14 @@
+dataset: NeuroTech
+data_dir: /rdf/user/pg34/sleep_data/Training_new
+optimizer: AdamW
+model_name: UNet
+input_norm: True
+learning_rate: 0.005
+balanced_sampler: False
+undersample: False
+downsample_ratio: 10
+batch_size: 1
+epochs: 200
+seed: 4
+pretrained: False
+weights_dir: null # /home/pg34/code/seizure/selective_sampling/ckpt/model_recon_dagmm_best_p1.pt

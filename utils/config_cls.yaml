@@ -1,0 +1,15 @@
+dataset: NeuroTech
+data_dir: /rdf/user/pg34/sleep_data/processed_new
+optimizer: AdamW
+model_name: R18
+input_norm: True
+learning_rate: 0.005
+balanced_sampler: True
+undersample: False
+mixup: True
+weight_CE: False
+batch_size: 256
+epochs: 60
+seed: 108
+pretrained: False
+weights_dir: null 
