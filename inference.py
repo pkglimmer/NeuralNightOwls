@@ -24,15 +24,15 @@ def load_wandb_state_dict(ckpt_path):
 def resnet10_inference(input, ckpt_path=None):
     # input: (B, 6, 3000)
     # output: (B, 6, 3000)
-    ckpt_path = f'/rdf/user/pg34/NeuroTech/ckpt/NeuroTech/NeuroTech-epoch=40-val_AUROC=0.96.ckpt' if ckpt_path is None else ckpt_path   
-    model = resnet10(num_input_channels=6, num_classes=6).cuda()
+    ckpt_path = os.path.join('/rdf/user/pg34/NeuroTech/ckpt/R10', ckpt_path)
+    model = resnet10(num_input_channels=6, num_classes=6)
     model.load_state_dict(load_wandb_state_dict(ckpt_path))
     # min-max normalize input    
     for i in range(input.shape[0]):  # Loop over the batch dimension
         for j in range(input.shape[1]):  # Loop over the channel dimension
             input[i, j, :] = (input[i, j, :] - input[i, j, :].min()) / (input[i, j, :].max() - input[i, j, :].min() + 1e-6)
     
-    outputs = model(input.cuda())
+    outputs = model(input)
     _, preds = torch.max(outputs, dim=1)
     print(f'ResNet10 inference complete. Output shape: {preds.shape}')
     return preds
@@ -40,14 +40,15 @@ def resnet10_inference(input, ckpt_path=None):
 def resnet18_inference(input, ckpt_path=None):
     # input: (B, 6, 3000)
     # output: (B, 6, 3000)
-    model = resnet18(num_input_channels=6, num_classes=6).cuda()
+    ckpt_path = os.path.join('/rdf/user/pg34/NeuroTech/ckpt/R18', ckpt_path)
+    model = resnet18(num_input_channels=6, num_classes=6)
     model.load_state_dict(load_wandb_state_dict(ckpt_path))
     # min-max normalize input    
     for i in range(input.shape[0]):  # Loop over the batch dimension
         for j in range(input.shape[1]):  # Loop over the channel dimension
             input[i, j, :] = (input[i, j, :] - input[i, j, :].min()) / (input[i, j, :].max() - input[i, j, :].min() + 1e-6)
     
-    outputs = model(input.cuda())
+    outputs = model(input)
     _, preds = torch.max(outputs, dim=1)
     print(f'ResNet18 inference complete. Output shape: {preds.shape}')
     return preds
@@ -55,21 +56,22 @@ def resnet18_inference(input, ckpt_path=None):
 def resnet50_inference(input, ckpt_path=None):
     # input: (B, 6, 3000)
     # output: (B, 6, 3000)
-    model = resnet50(num_input_channels=6, num_classes=6).cuda()
+    ckpt_path = os.path.join('/rdf/user/pg34/NeuroTech/ckpt/R50', ckpt_path)
+    model = resnet50(num_input_channels=6, num_classes=6)
     model.load_state_dict(load_wandb_state_dict(ckpt_path))
     # min-max normalize input    
     for i in range(input.shape[0]):  # Loop over the batch dimension
         for j in range(input.shape[1]):  # Loop over the channel dimension
             input[i, j, :] = (input[i, j, :] - input[i, j, :].min()) / (input[i, j, :].max() - input[i, j, :].min() + 1e-6)
     
-    outputs = model(input.cuda())
+    outputs = model(input)
     _, preds = torch.max(outputs, dim=1)
-    print(f'ResNet18 inference complete. Output shape: {preds.shape}')
+    print(f'ResNet50 inference complete. Output shape: {preds.shape}')
     return preds
 
 def unet_inference(input, ckpt_path=None):
-    ckpt_path = '/rdf/user/pg34/NeuroTech/ckpt/unet_v0/NeuroTech-UNet-epoch=146-val_acc=0.90.ckpt' if ckpt_path is None else ckpt_path  
-    model = UNet1D().cuda()
+    ckpt_path = os.path.join('/rdf/user/pg34/NeuroTech/ckpt/unet_v0', ckpt_path)
+    model = UNet1D()
     model.load_state_dict(load_wandb_state_dict(ckpt_path))
     
     x = input.unsqueeze(0)
@@ -80,7 +82,7 @@ def unet_inference(input, ckpt_path=None):
     mean = x.mean(dim=-1, keepdim=True)
     std = x.std(dim=-1, keepdim=True)
     x = (x - mean) / (std + 1e-6)
-    outputs = model(x.cuda())
+    outputs = model(x)
     # print(outputs.shape, y_mask.shape) # torch.Size([1, 6, 84120]) torch.Size([1, 84120, 6])
     outputs = outputs.permute(0, 2, 1)
     
@@ -102,8 +104,9 @@ def unet_inference(input, ckpt_path=None):
     
 def test_inference():
     x = torch.zeros(1300, 6, 3000)
-    unet_inference(x)
-    resnet10_inference(x)
+    unet_inference(x).shape
+    resnet10_inference(x).shape
+    resnet50_inference(x).shape
 
     
 def inference(x):
@@ -122,13 +125,27 @@ def inference(x):
     resnet50_ckpt_paths = os.listdir('/rdf/user/pg34/NeuroTech/ckpt/R50')
     y7 = resnet50_inference(x, ckpt_path=resnet50_ckpt_paths[0])
     
+        # Stack the tensors
+    stacked_tensors = torch.stack([y1, y2, y3], dim=0)  # This creates a tensor of shape [number_of_tensors, 1300]
+
+    # Compute the mode along the first dimension
+    mode_values, mode_indices = torch.mode(stacked_tensors, dim=0)
+    return mode_values
 
 
 if __name__ == '__main__':
     test_data_path = '/rdf/user/pg34/sleep_data/Eval_new'
-    # input = np.load(os.path.join(test_data_path, 'eval_a_NEW_X.npy'))
-    # data_path = f'{data_base_path}/train_data.npy'
+    x1 = np.load(os.path.join(test_data_path, 'eval_a_NEW_X.npy'))
+    y1 = inference(torch.from_numpy(x1).float())
+    y1 = y1 + 1
+    np.save('assets/a_pred.npy', y1.numpy())
+    print(y1)
+    print(sum(y1))
 
-    test_inference()
-
+    x2 = np.load(os.path.join(test_data_path, 'eval_b_NEW_X.npy'))
+    y2 = inference(torch.from_numpy(x2).float())
+    y2 = y2 + 1
+    np.save('assets/b_pred.npy', y2.numpy())
+    print(y2)
+    print(sum(y2))
 
