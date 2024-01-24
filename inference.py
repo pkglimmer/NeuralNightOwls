@@ -69,7 +69,7 @@ def resnet50_inference(input, ckpt_path=None):
     print(f'ResNet50 inference complete. Output shape: {preds.shape}')
     return preds
 
-def unet_inference(input, ckpt_path=None):
+def unet_inference(input, ckpt_path=None, downsample_ratio=2):
     ckpt_path = os.path.join('/rdf/user/pg34/NeuroTech/ckpt/unet_v0', ckpt_path)
     model = UNet1D()
     model.load_state_dict(load_wandb_state_dict(ckpt_path))
@@ -111,8 +111,8 @@ def test_inference():
     
 def inference(x):
     unet_ckpt_paths = os.listdir('/rdf/user/pg34/NeuroTech/ckpt/unet_v0')
-    y1 = unet_inference(x, ckpt_path=unet_ckpt_paths[0])
-    y2 = unet_inference(x, ckpt_path=unet_ckpt_paths[1])
+    y1 = unet_inference(x, ckpt_path=unet_ckpt_paths[0], downsample_ratio=5)
+    y2 = unet_inference(x, ckpt_path=unet_ckpt_paths[1], downsample_ratio=10)
     
     resnet10_ckpt_paths = os.listdir('/rdf/user/pg34/NeuroTech/ckpt/R10')
     y3 = resnet10_inference(x, ckpt_path=resnet10_ckpt_paths[0])
@@ -127,6 +127,9 @@ def inference(x):
     
         # Stack the tensors
     stacked_tensors = torch.stack([y1, y2, y3, y4, y5, y6, y7], dim=0)  # This creates a tensor of shape [number_of_tensors, 1300]
+    # stacked_tensors = torch.stack([y3, y4, y5, y6, y7], dim=0)  # ResNet ensemble
+    # stacked_tensors = torch.stack([y1, y2], dim=0)  # UNet ensemble
+    
 
     # Compute the mode along the first dimension
     mode_values, mode_indices = torch.mode(stacked_tensors, dim=0)
@@ -134,18 +137,19 @@ def inference(x):
 
 
 if __name__ == '__main__':
+    suffix = '_unet'
     test_data_path = '/rdf/user/pg34/sleep_data/Eval_new'
     x1 = np.load(os.path.join(test_data_path, 'eval_a_NEW_X.npy'))
     y1 = inference(torch.from_numpy(x1).float())
     y1 = y1 + 1
-    np.save('assets/a_pred_1.npy', y1.numpy())
+    np.save(f'assets/a_pred{suffix}.npy', y1.numpy())
     print(y1)
     print(sum(y1))
 
     x2 = np.load(os.path.join(test_data_path, 'eval_b_NEW_X.npy'))
     y2 = inference(torch.from_numpy(x2).float())
     y2 = y2 + 1
-    np.save('assets/b_pred_1.npy', y2.numpy())
+    np.save(f'assets/b_pred{suffix}.npy', y2.numpy())
     print(y2)
     print(sum(y2))
 

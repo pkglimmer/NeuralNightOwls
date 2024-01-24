@@ -1,3 +1,7 @@
+Rice [Datathon 2024](https://rice-datathon-2024.devpost.com/) NeuroTech@Rice track 1st place solution. 
+
+[Project](https://devpost.com/software/hypnos-gvzdxo)
+
 ## How to run the code
 
 Dependencies:`torch`, `numpy`, `pytorch_lightning`, `wandb`, `scipy`, `scikit-learn`.
